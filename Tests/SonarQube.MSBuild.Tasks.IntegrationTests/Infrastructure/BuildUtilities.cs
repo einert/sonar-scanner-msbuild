@@ -164,6 +164,8 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests
             testContext.AddResultFile(projectFilePath);
 
             ProjectRootElement projectRoot = ProjectRootElement.Open(projectFilePath);
+            // Seems like ToolsVersion in templateXml is ignored
+            projectRoot.ToolsVersion = MSBuildToolsVersionForTestProjects;
             return projectRoot;
         }
 
