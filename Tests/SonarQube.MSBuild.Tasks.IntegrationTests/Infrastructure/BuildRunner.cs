@@ -18,8 +18,12 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests
             var msbuildArgs = new List<string>();
             var loggerType = typeof(Logger.SimpleXmlLogger);
             msbuildArgs.Add($"/logger:{loggerType.FullName},{loggerType.Assembly.Location};{logPath}");
-            msbuildArgs.Add($"/t:" + string.Join(";", targets.ToArray()));
             msbuildArgs.Add(projectFile);
+
+            if (targets?.Length > 0)
+            {
+                msbuildArgs.Add($"/t:" + string.Join(";", targets.ToArray()));
+            }
 
             var args = new ProcessRunnerArguments(exePath, false, new ConsoleLogger(true));
             args.CmdLineArgs = msbuildArgs;

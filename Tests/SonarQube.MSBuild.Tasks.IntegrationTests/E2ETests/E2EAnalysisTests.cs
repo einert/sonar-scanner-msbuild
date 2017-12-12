@@ -93,22 +93,20 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
             };
             AddEmptyAnalysedCodeFile(descriptor, rootInputFolder);
 
-            var projectRoot = BuildUtilities.CreateInitializedProjectRoot(TestContext, descriptor, preImportProperties);
-
-            var logger = new BuildLogger();
+            BuildUtilities.CreateInitializedProjectRoot(TestContext, descriptor, preImportProperties);
 
             // Act
-            var result = BuildUtilities.BuildTargets(projectRoot, logger);
+            var result = BuildRunner.BuildTargets(descriptor.FullFilePath);
 
             // Assert
-            BuildAssertions.AssertTargetSucceeded(result, TargetConstants.DefaultBuildTarget); // Build should succeed with warnings
+            result.AssertTargetSucceeded(TargetConstants.DefaultBuildTarget); // Build should succeed with warnings
             ProjectInfoAssertions.AssertNoProjectInfoFilesExists(rootOutputFolder);
 
-            logger.AssertExpectedErrorCount(0);
-            logger.AssertExpectedWarningCount(1);
+            result.AssertExpectedErrorCount(0);
+            result.AssertExpectedWarningCount(1);
 
-            var warning = logger.Warnings[0];
-            Assert.IsTrue(warning.Message.Contains(descriptor.FullFilePath),
+            var warning = result.Warnings[0];
+            Assert.IsTrue(warning.Contains(descriptor.FullFilePath),
                 "Expecting the warning to contain the full path to the bad project file");
         }
 
@@ -139,20 +137,18 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
             var projectRoot = BuildUtilities.CreateInitializedProjectRoot(TestContext, descriptor, preImportProperties);
             projectRoot.AddProperty("ProjectGuid", "Invalid guid");
 
-            var logger = new BuildLogger();
-
             // Act
-            var result = BuildUtilities.BuildTargets(projectRoot, logger);
+            var result = BuildRunner.BuildTargets(descriptor.FullFilePath);
 
             // Assert
-            BuildAssertions.AssertTargetSucceeded(result, TargetConstants.DefaultBuildTarget); // Build should succeed with warnings
+            result.AssertTargetSucceeded(TargetConstants.DefaultBuildTarget); // Build should succeed with warnings
             ProjectInfoAssertions.AssertNoProjectInfoFilesExists(rootOutputFolder);
 
-            logger.AssertExpectedErrorCount(0);
-            logger.AssertExpectedWarningCount(1);
+            result.AssertExpectedErrorCount(0);
+            result.AssertExpectedWarningCount(1);
 
-            var warning = logger.Warnings[0];
-            Assert.IsTrue(warning.Message.Contains(descriptor.FullFilePath),
+            var warning = result.Warnings[0];
+            Assert.IsTrue(warning.Contains(descriptor.FullFilePath),
                 "Expecting the warning to contain the full path to the bad project file");
         }
 
@@ -391,8 +387,6 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
             var rootInputFolder = TestUtils.CreateTestSpecificFolder(TestContext, "Inputs");
             var rootOutputFolder = TestUtils.CreateTestSpecificFolder(TestContext, "Outputs");
 
-            var logger = new BuildLogger();
-
             var sqTargetFile = TestUtils.EnsureAnalysisTargetsExists(TestContext);
             var projectFilePath = Path.Combine(rootInputFolder, "project.txt");
             var projectGuid = Guid.NewGuid();
@@ -442,13 +436,13 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
                 );
 
             // Act
-            var result = BuildUtilities.BuildTargets(projectRoot, logger,
+            var result = BuildRunner.BuildTargets(projectFilePath,
                 TargetConstants.DefaultBuildTarget);
 
             // Assert
-            BuildAssertions.AssertTargetSucceeded(result, TargetConstants.DefaultBuildTarget);
+            result.AssertTargetSucceeded(TargetConstants.DefaultBuildTarget);
 
-            logger.AssertExpectedTargetOrdering(
+            result.AssertExpectedTargetOrdering(
                 TargetConstants.DefaultBuildTarget,
                 TargetConstants.CategoriseProjectTarget,
                 TargetConstants.CalculateFilesToAnalyzeTarget,
@@ -471,7 +465,7 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
 
         [TestMethod]
         [TestCategory("E2E"), TestCategory("Targets")]
-        public void E2E_BareProject_CorrectlyCategorised()
+        public void E2E_BareProject_CorrectlyCategorisedOld()
         {
             // Checks that projects that don't include the standard managed targets are still
             // processed correctly e.g. can be excluded, marked as test projects etc
@@ -668,22 +662,21 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
         /// <returns>The full path of the project-specsific directory that was created during the build</returns>
         private string CreateAndBuildSonarProject(ProjectDescriptor descriptor, string rootOutputFolder, WellKnownProjectProperties preImportProperties)
         {
-            var projectRoot = BuildUtilities.CreateInitializedProjectRoot(TestContext, descriptor, preImportProperties);
-
-            var logger = new BuildLogger();
+            BuildUtilities.CreateInitializedProjectRoot(TestContext, descriptor, preImportProperties);
 
             // Act
-            var result = BuildUtilities.BuildTargets(projectRoot, logger);
+            var result = BuildRunner.BuildTargets(descriptor.FullFilePath);
+            TestContext.AddResultFile(result.FilePath);
 
             // Assert
-            BuildAssertions.AssertTargetSucceeded(result, TargetConstants.DefaultBuildTarget);
+            result.AssertTargetSucceeded(TargetConstants.DefaultBuildTarget);
 
             // We expect the compiler to warn if there are no compiler inputs
             var expectedWarnings = descriptor.HasManagedSourceFiles ? 0 : 1;
-            logger.AssertExpectedErrorCount(0);
-            logger.AssertExpectedWarningCount(expectedWarnings);
+            result.AssertExpectedErrorCount(0);
+            result.AssertExpectedWarningCount(expectedWarnings);
 
-            logger.AssertExpectedTargetOrdering(
+            result.AssertExpectedTargetOrdering(
                 TargetConstants.CategoriseProjectTarget,
                 TargetConstants.DefaultBuildTarget,
                 TargetConstants.CalculateFilesToAnalyzeTarget,
@@ -694,7 +687,7 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
 
             // Check expected project outputs
             Assert.AreEqual(1, Directory.EnumerateDirectories(rootOutputFolder).Count(), "Only expecting one child directory to exist under the root analysis output folder");
-            ProjectInfoAssertions.AssertProjectInfoExists(rootOutputFolder, projectRoot.FullPath);
+            ProjectInfoAssertions.AssertProjectInfoExists(rootOutputFolder, descriptor.FullFilePath);
 
             return Directory.EnumerateDirectories(rootOutputFolder).Single();
         }
