@@ -5,6 +5,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <IsPackable>false</IsPackable>
     <CodeAnalysisRuleSet>SonarQube.MSBuild.Tasks.IntegrationTests.ruleset</CodeAnalysisRuleSet>
+    <AssemblyName>SonarQube.MSBld.Tasks.IntegrationTests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
