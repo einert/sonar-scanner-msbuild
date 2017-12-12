@@ -462,84 +462,10 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests.E2E
             var actualFilesToAnalyse = File.ReadAllLines(filesToAnalyse.Location);
             CollectionAssert.AreEquivalent(new string[] { codeFile, contentFile }, actualFilesToAnalyse, "Unexpected list of files to analyse");
         }
-
+        
         [TestMethod]
         [TestCategory("E2E"), TestCategory("Targets")]
-        public void E2E_BareProject_CorrectlyCategorisedOld()
-        {
-            // Checks that projects that don't include the standard managed targets are still
-            // processed correctly e.g. can be excluded, marked as test projects etc
-
-            // Arrange
-            var rootInputFolder = TestUtils.CreateTestSpecificFolder(TestContext, "Inputs");
-            var rootOutputFolder = TestUtils.CreateTestSpecificFolder(TestContext, "Outputs");
-
-            var logger = new BuildLogger();
-
-            var sqTargetFile = TestUtils.EnsureAnalysisTargetsExists(TestContext);
-            var projectFilePath = Path.Combine(rootInputFolder, "project.txt");
-            var projectGuid = Guid.NewGuid();
-
-            var projectXml = @"<?xml version='1.0' encoding='utf-8'?>
-<Project ToolsVersion='12.0' xmlns='http://schemas.microsoft.com/developer/msbuild/2003'>
-
-  <PropertyGroup>
-    <SonarQubeExclude>true</SonarQubeExclude>
-    <Language>my.language</Language>
-    <ProjectTypeGuids>{4}</ProjectTypeGuids>
-
-    <ProjectGuid>{0}</ProjectGuid>
-
-    <SonarQubeTempPath>{1}</SonarQubeTempPath>
-    <SonarQubeOutputPath>{1}</SonarQubeOutputPath>
-    <SonarQubeBuildTasksAssemblyFile>{2}</SonarQubeBuildTasksAssemblyFile>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <!-- no recognised content -->
-  </ItemGroup>
-
-  <Import Project='{3}' />
-
-  <Target Name='Build'>
-    <Message Importance='high' Text='In dummy build target' />
-  </Target>
-
-</Project>
-";
-            var projectRoot = BuildUtilities.CreateProjectFromTemplate(projectFilePath, TestContext, projectXml,
-                projectGuid.ToString(),
-                rootOutputFolder,
-                typeof(WriteProjectInfoFile).Assembly.Location,
-                sqTargetFile,
-                TargetConstants.MsTestProjectTypeGuid
-                );
-
-            // Act
-            var result = BuildUtilities.BuildTargets(projectRoot, logger,
-                TargetConstants.DefaultBuildTarget);
-
-            // Assert
-            BuildAssertions.AssertTargetSucceeded(result, TargetConstants.DefaultBuildTarget);
-
-            logger.AssertExpectedTargetOrdering(
-                TargetConstants.DefaultBuildTarget,
-                TargetConstants.CategoriseProjectTarget,
-                TargetConstants.CalculateFilesToAnalyzeTarget,
-                TargetConstants.WriteProjectDataTarget);
-
-            // Check the project info
-            var projectInfo = ProjectInfoAssertions.AssertProjectInfoExists(rootOutputFolder, projectRoot.FullPath);
-
-            Assert.IsTrue(projectInfo.IsExcluded, "Expecting the project to be marked as excluded");
-            Assert.AreEqual("my.language", projectInfo.ProjectLanguage, "Unexpected project language");
-            Assert.AreEqual(ProjectType.Test, projectInfo.ProjectType, "Project should be marked as a test project");
-            Assert.AreEqual(0, projectInfo.AnalysisResults.Count, "Unexpected number of analysis results created");
-        }
-
-        [TestMethod]
-        [TestCategory("E2E"), TestCategory("Targets")]
-        public void E2E_BareProject_CorrectlyCategorised2()
+        public void E2E_BareProject_CorrectlyCategorised()
         {
             // Checks that projects that don't include the standard managed targets are still
             // processed correctly e.g. can be excluded, marked as test projects etc
