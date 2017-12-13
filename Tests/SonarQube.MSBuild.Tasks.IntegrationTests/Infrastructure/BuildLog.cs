@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
@@ -37,6 +38,27 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests
         public List<string> Errors { get; set; }
 
         public bool BuildSucceeded { get; set; }
+
+        public string GetPropertyValue(string propertyName)
+        {
+            TryGetPropertyValue(propertyName, out string propertyValue);
+            return propertyValue;
+        }
+
+        public bool TryGetPropertyValue(string propertyName, out string value)
+        {
+            BuildProperty property = this.BuildProperties.FirstOrDefault(
+                p => p.Name.Equals(propertyName, System.StringComparison.OrdinalIgnoreCase));
+
+            if (property == null)
+            {
+                value = null;
+                return false;
+            }
+
+            value = property.Value;
+            return true;
+        }
 
         [XmlIgnore]
         public string FilePath { get; private set; }

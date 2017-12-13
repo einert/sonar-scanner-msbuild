@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.Build.Execution;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SonarQube.MSBuild.Tasks.IntegrationTests
@@ -23,6 +22,35 @@ namespace SonarQube.MSBuild.Tasks.IntegrationTests
         {
             AssertTargetExecuted(log, target);
             Assert.IsFalse(log.BuildSucceeded);
+        }
+
+        public static void AssertExpectedPropertyValue(this BuildLog log, string propertyName, string expectedValue)
+        {
+            if (expectedValue == null)
+            {
+                AssertPropertyDoesNotExist(log, propertyName);
+            }
+            else
+            {
+                string propertyValue = AssertPropertyExists(log, propertyName);
+                Assert.AreEqual(expectedValue, propertyValue, "Property '{0}' does not have the expected value", propertyName);
+            }
+        }
+
+        public static string AssertPropertyExists(this BuildLog log, string propertyName)
+        {
+            var exists = log.TryGetPropertyValue(propertyName, out string propertyValue);
+            Assert.IsTrue(exists,
+                "Expecting the property to exist. Property: {0}, Value: {1}", propertyName, propertyValue);
+
+            return propertyValue;
+        }
+
+        public static void AssertPropertyDoesNotExist(this BuildLog log, string propertyName)
+        {
+            var exists = log.TryGetPropertyValue(propertyName, out string propertyValue);
+            Assert.IsFalse(exists,
+                "Not expecting the property to exist. Property: {0}, Value: {1}", propertyName, propertyValue);
         }
 
         public static void AssertTargetExecuted(this BuildLog log, string targetName)
