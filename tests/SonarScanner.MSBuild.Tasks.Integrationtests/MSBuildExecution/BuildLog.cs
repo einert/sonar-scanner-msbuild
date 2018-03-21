@@ -39,10 +39,14 @@ namespace SonarScanner.MSBuild.Tasks.IntegrationTests
             Tasks = new List<string>();
             Warnings = new List<string>();
             Errors = new List<string>();
-            BuildProperties = new List<BuildProperty>();
+            BuildProperties = new List<BuildKeyValue>();
         }
 
-        public List<BuildProperty> BuildProperties { get; set; }
+        public List<BuildKeyValue> BuildProperties { get; set; }
+
+        public List<BuildKeyValue> CapturedProperties { get; set; }
+
+        public List<BuildItem> CapturedItemValues { get; set; }
 
         public List<string> Targets { get; set; }
 
@@ -119,7 +123,7 @@ namespace SonarScanner.MSBuild.Tasks.IntegrationTests
         }
     }
 
-    public class BuildProperty
+    public class BuildKeyValue
     {
         [XmlAttribute]
         public string Name { get; set; }
@@ -128,4 +132,14 @@ namespace SonarScanner.MSBuild.Tasks.IntegrationTests
         public string Value { get; set; }
     }
 
+    public class BuildItem
+    {
+        [XmlAttribute]
+        public string Name { get; set; }
+
+        [XmlAttribute]
+        public string Value { get; set; }
+
+        public List<BuildKeyValue> Metadata { get; set; }
+    }
 }
